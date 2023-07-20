@@ -15,11 +15,9 @@ def limit_gmv(df: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: The modified DataFrame with the 'gvm'
          values limited by the product price and stock quantity.
     """
-
     df_results = df.copy()
-    
-    mask = df["gmv"] / df_results["price"] > df_results["stock"]
+    mask = df_results["gmv"] / df_results["price"] > df_results["stock"]
     df_results.loc[mask, "gmv"] = df_results["price"] * df_results["stock"]
-    df_results.loc[~mask, "gmv"] = df_results["price"] * np.floor_divide(df_results["gmv"],
-                                                                         df_results["price"])
+    df_results.loc[~mask, "gmv"] = df_results["price"] * np.floor(
+        df_results["gmv"] / df_results["price"])
     return df_results
