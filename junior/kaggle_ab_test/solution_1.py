@@ -1,6 +1,6 @@
 """Baseline for Kaggle AB."""
 
-from typing import Callable, Dict, List, Tuple
+from typing import Callable, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -49,14 +49,18 @@ def cross_val_score(
     metrics = np.empty((0, cv))
     if show_progress:
         params_list = tqdm(params_list)
+
     for param in params_list:
-        model = model.set_params(**param)
+        model.set_params(**param)
         fold_metrics = []
         kf = KFold(n_splits=cv, random_state=random_state, shuffle=True)
         for _, (train_index, test_index) in enumerate(kf.split(X)):
-            y_pred = model.fit(X[train_index], y[train_index])\
-                .predict(X[test_index])
-            fold_metrics.append(scoring(y[test_index], y_pred))
+
+            X_train, X_test = X[train_index], X[test_index]
+            y_train, y_test = y[train_index], y[test_index]
+            model.fit(X_train, np.log1p(y_train))
+            y_pred = np.expm1(model.predict(X_test))
+            fold_metrics.append(scoring(y_test, y_pred))
         metrics = np.concatenate(
             (metrics, np.array(fold_metrics).reshape(1, -1)), axis=0)
     return metrics
@@ -68,7 +72,7 @@ def compare_models(
     params_list: List[Dict],
     X: np.ndarray,
     y: np.ndarray,
-    random_state: int,
+    random_state: int = 42,
     show_progress: bool = False,
 ) -> List[Dict]:
     """
