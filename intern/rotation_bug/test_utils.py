@@ -8,7 +8,8 @@ def test_rotated_image():
     """
     image = skimage.data.rocket()
     result = utils.rotated_image(image)
-
+    skimage.io.imshow(result)
+    plt.show()
     assert image.shape == result.shape
 
 
