@@ -2,21 +2,6 @@ import utils
 import yaml.loader
 
 config = """
-log_dir: "Models/VCTK20"
-save_freq: 2
-device: "cuda"
-epochs: 150
-batch_size: 5
-pretrained_model: ""
-load_only_params: false
-fp16_run: true
-
-train_data: "Data/train_list.txt"
-val_data: "Data/val_list.txt"
-
-F0_path: "Utils/JDC/bst.t7"
-ASR_config: "Utils/ASR/config.yml"
-ASR_path: "Utils/ASR/epoch_00100.pth"
 
 preprocess_params:
   sr: 24000
@@ -51,7 +36,7 @@ loss_params:
     lambda_reg: 1.
     lambda_adv_cls: 0.1
     lambda_con_reg: 10.
-
+  
   adv_cls_epoch: 50
   con_reg_epoch: 30
 
@@ -59,7 +44,10 @@ optimizer_params:
   lr: 0.0001
 """
 
+config_env_to_yaml = utils.yaml_to_env(config)
+
 def test_yaml_to_env():
+  
     """_summary_
 
     Returns
@@ -67,8 +55,10 @@ def test_yaml_to_env():
     _type_
         _description_
     """
-    # with open("config.yaml", "r") as fi:
-    #     config = yaml.safe_load(fi)
 
-    utils.yaml_to_env(config_file=config)
-    return None
+    result = utils.yaml_to_env(config_file=config)
+
+
+
+def test_env_to_yaml():
+    result = utils.env_to_yaml(env_list=config_env_to_yaml)
