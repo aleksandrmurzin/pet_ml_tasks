@@ -47,11 +47,11 @@ def best_split(X: np.ndarray, y: np.ndarray) -> tuple[int, float]:
 class Node:
     """Decision tree node."""
     def __init__(self, feature = None, threshold = None, n_samples = None,
-                 values = None, mse = None, left: Node = None, right: Node = None) -> None:
+                 value = None, mse = None, left: Node = None, right: Node = None) -> None:
         self.feature = feature
         self.threshold = threshold
         self.n_samples = n_samples
-        self.values = values
+        self.value = value
         self.mse = mse
         self.left = left
         self.right = right
