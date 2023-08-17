@@ -1,8 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
-
+import json
 import numpy as np
-
+from multiprocessing import Pool
 
 class Node:
     """Decision tree node."""
@@ -17,6 +17,15 @@ class Node:
         self.left = left
         self.right = right
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return np.float32(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
 
 @dataclass
 class DecisionTreeRegressor:
@@ -83,3 +92,46 @@ class DecisionTreeRegressor:
                                      best_f=best_f, best_thr=best_thr),
                     self._split_node(X=X_r, y=y_r, depth=depth+1,
                                      best_f=best_f, best_thr=best_thr))
+
+    def predict(self, X: np.ndarray) -> np.ndarray:
+        """
+        Predict regression target for X.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+            The input samples.
+
+        Returns
+        -------
+        y : array of shape (n_samples,)
+            The predicted values.
+        """
+        pred = []
+        for i in X:
+            self.tree__ = self.tree_
+            pred.append(self._predict_one_sample(i))
+        return np.array(pred)
+
+    def _predict_one_sample(self, features: np.ndarray) -> int:
+        if self.tree__.left is None and self.tree__.right is None:
+            return self.tree__.value
+        feature = features[self.tree__.feature]
+        if feature <= self.tree__.threshold:
+            return self._predict_one_sample(features=features)
+        return self._predict_one_sample(features=features)
+
+    def as_json(self) -> str:
+        return json.dumps(self._as_json(self.tree_), cls=NpEncoder)
+
+    def _as_json(self, node: Node) -> str:
+        if node.left is None and node.right is None:
+            return {"value": node.value,
+                    "n_samples": node.n_samples,
+                    "mse": np.round(node.mse, 2)}
+        return {"feature": node.feature,
+                "threshold": node.threshold,
+                "n_samples": node.n_samples,
+                "mse": np.round(node.mse, 2),
+                "left": self._as_json(node.left), 
+                "right": self._as_json(node.right)}
