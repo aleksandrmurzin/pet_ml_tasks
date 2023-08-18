@@ -21,7 +21,7 @@ def split(X: np.ndarray, y: np.ndarray, feature: int) -> float:
     x = X[:, feature]
     best_mse = np.inf
     for i in sorted(set(x))[:-1]:
-        current_mse = weighted_mse(x[x<=i], x[x>i])
+        current_mse = weighted_mse(y[x<=i], y[x>i])
         if current_mse < best_mse:
             best_threshold = i
             best_mse = current_mse
