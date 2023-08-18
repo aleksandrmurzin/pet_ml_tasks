@@ -107,19 +107,22 @@ class DecisionTreeRegressor:
         y : array of shape (n_samples,)
             The predicted values.
         """
-        pred = []
+        preds = []
         for i in X:
-            self.tree__ = self.tree_
-            pred.append(self._predict_one_sample(i))
-        return np.array(pred)
+            preds.append(self._predict_one_sample(i))
+        return np.array(preds)
 
     def _predict_one_sample(self, features: np.ndarray) -> int:
-        if self.tree__.left is None and self.tree__.right is None:
-            return self.tree__.value
-        feature = features[self.tree__.feature]
-        if feature <= self.tree__.threshold:
-            return self._predict_one_sample(features=features)
-        return self._predict_one_sample(features=features)
+        def rec(node):
+            if node.left is None and node.left is None:
+                return node.value
+            feature = features[node.feature]
+            if feature <= node.threshold:
+                return rec(node.left)
+            return rec(node.right)
+        one_pred = rec(self.tree_)
+        return one_pred
+
 
     def as_json(self) -> str:
         return json.dumps(self._as_json(self.tree_), cls=NpEncoder)
@@ -128,10 +131,10 @@ class DecisionTreeRegressor:
         if node.left is None and node.right is None:
             return {"value": node.value,
                     "n_samples": node.n_samples,
-                    "mse": np.round(node.mse, 2)}
+                    "mse": np.round(node.mse, 2)} # type: ignore
         return {"feature": node.feature,
                 "threshold": node.threshold,
                 "n_samples": node.n_samples,
                 "mse": np.round(node.mse, 2),
-                "left": self._as_json(node.left), 
-                "right": self._as_json(node.right)}
+                "left": self._as_json(node.left),
+                "right": self._as_json(node.right)} # type: ignore
