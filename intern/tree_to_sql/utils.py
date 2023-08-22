@@ -53,10 +53,13 @@ def generate_sql_query(tree_as_json: str, features: list) -> str:
     Returns:
         str: _description_
     """
-    tree_as_dict = json.dumps(tree_as_json)
-    sql_query = """CASE\nEND"""
-    def rec(node, sql_query=sql_query):
-        import pdb; pdb.set_trace()
-        sql_query.split("CASE")
-    rec(tree_as_dict,)
-    return sql_query
+    tree_as_dict = json.loads(tree_as_json)
+
+    def rec(node, n=1):
+        if "class" in node:
+            return f"{node['class']}"
+        feature_name = features[node["feature_index"]]
+        return f"CASE\n\tWHEN {feature_name} > {node['threshold']} THEN {rec(node['right'])}\n\tELSE {rec(node['left'])} END"
+
+    sql_query = rec(tree_as_dict)
+    return f"SELECT \n {sql_query} AS CLASS_LABEL"
