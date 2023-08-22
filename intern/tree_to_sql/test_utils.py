@@ -18,4 +18,4 @@ clf.fit(X, y)
 
 def test_generate_sql_query():
     tree_as_json = convert_tree_to_json(clf)
-    sql_query = generate_sql_query(tree_as_json, features)   
+    sql_query = generate_sql_query(tree_as_json, features)
