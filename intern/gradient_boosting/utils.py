@@ -16,6 +16,8 @@ class GradientBoostingRegressor:
         min_samples_split=2,
         loss="mse",
         verbose=False,
+        subsample_size=0.5,
+        replace=False
     ):
         self.n_estimators = n_estimators
         self.learning_rate=learning_rate
@@ -24,6 +26,16 @@ class GradientBoostingRegressor:
         self.loss=loss
         self.verbose=verbose
         self.trees_ = []
+        self.subsample_size = subsample_size
+        self.replace = replace
+
+
+    def _subsample(self, X, y):
+        size = int(len(X) * self.subsample_size)
+        idx = np.random.choice(len(X), size=size, replace=self.replace)
+        sub_X = X[idx,:]
+        sub_y = y[idx]
+        return sub_X, sub_y
 
     def _mae(self, y_true, y_pred) -> Tuple[float, np.ndarray]:
         """Mean absolute error loss function and gradient."""
@@ -52,9 +64,7 @@ class GradientBoostingRegressor:
         iterator_n_estimator = 0
         preds = self.base_pred_ = y.mean() # first pred
 
-
         while iterator_n_estimator < self.n_estimators:
-
             if self.loss == "mse": # calc gradient
                 loss, residuals = self._mse(y, preds)
                 if self.verbose:
@@ -70,7 +80,7 @@ class GradientBoostingRegressor:
             dtr = DecisionTreeRegressor(
                 max_depth=self.max_depth,
                 min_samples_leaf=self.min_samples_split,)
-            dtr.fit(X, antigradient)
+            dtr.fit(*self._subsample(X, antigradient))
             preds +=  dtr.predict(X) * self.learning_rate
             self.trees_.append(dtr)
             iterator_n_estimator += 1
