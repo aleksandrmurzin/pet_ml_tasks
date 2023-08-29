@@ -2,13 +2,33 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 import numpy as np
-from multiprocessing import Pool
+
 
 class Node:
     """Decision tree node."""
 
     def __init__(self, feature=None, threshold=None, n_samples=None,
                  value=None, mse=None, left: Node = None, right: Node = None) -> None:
+        """
+        Initialize a decision tree node.
+
+        Parameters
+        ----------
+        feature : int, optional
+            The index of the feature that this node splits on.
+        threshold : float, optional
+            The threshold value for the feature split.
+        n_samples : int, optional
+            The number of samples in the node.
+        value : float, optional
+            The predicted value for the node's samples.
+        mse : float, optional
+            The mean squared error of the node's samples.
+        left : Node, optional
+            The left child node.
+        right : Node, optional
+            The right child node.
+        """
         self.feature = feature
         self.threshold = threshold
         self.n_samples = n_samples
@@ -16,6 +36,7 @@ class Node:
         self.mse = mse
         self.left = left
         self.right = right
+
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -27,6 +48,7 @@ class NpEncoder(json.JSONEncoder):
             return obj.tolist()
         return super(NpEncoder, self).default(obj)
 
+
 @dataclass
 class DecisionTreeRegressor:
     """Desision tree regressor"""
@@ -35,7 +57,21 @@ class DecisionTreeRegressor:
     min_samples_split: int = 2
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> DecisionTreeRegressor:
-        """Build a decision tree regressor from the training set (X, y)."""
+        """
+        Build a decision tree regressor from the training set.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+            The training input samples.
+        y : array-like, shape (n_samples,)
+            The target values.
+
+        Returns
+        -------
+        self : DecisionTreeRegressor
+            The fitted regressor.
+        """
         self.n_features_ = X.shape[1]
         self.tree_ = self._split_node(X, y)
         return self
@@ -53,7 +89,25 @@ class DecisionTreeRegressor:
         return weighted_mean_squared_error
 
     def _split(self, X: np.array, y: np.array, feature: int) -> tuple[float, float]:
-        """Find the best split for a node (one feature)"""
+        """
+        Find the best split for a node using a single feature.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+            The input samples.
+        y : array-like, shape (n_samples,)
+            The target values.
+        feature : int
+            The index of the feature to split on.
+
+        Returns
+        -------
+        best_threshold : float
+            The best threshold value for the split.
+        best_mse : float
+            The MSE of the best split.
+        """
         x = X[:, feature]
         best_mse = np.inf
         _best_threshold = max(x)
@@ -65,7 +119,23 @@ class DecisionTreeRegressor:
         return _best_threshold, best_mse
 
     def _best_split(self, X: np.array, y: np.array) -> tuple[int, float]:
-        """Find the best split for a node (one feature)"""
+        """
+        Find the best split for a node using all features.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+            The input samples.
+        y : array-like, shape (n_samples,)
+            The target values.
+
+        Returns
+        -------
+        best_feature : int
+            The index of the best feature to split on.
+        best_threshold : float
+            The best threshold value for the split.
+        """
         best_feature = np.inf
         best_threshold = np.inf
         best_mse = np.inf
@@ -79,8 +149,27 @@ class DecisionTreeRegressor:
 
     def _split_node(self, X: np.ndarray, y: np.ndarray, depth: int = 0,
                     best_f=None, best_thr=None) -> Node:
-        """Split a node and return the resulting left and right child nodes."""
+        """
+        Split a node and return the resulting left and right child nodes.
 
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+            The input samples.
+        y : array-like, shape (n_samples,)
+            The target values.
+        depth : int, optional
+            The current depth of the node in the tree.
+        best_f : int, optional
+            The index of the best feature to split on.
+        best_thr : float, optional
+            The best threshold value for the split.
+
+        Returns
+        -------
+        node : Node
+            The node resulting from the split.
+        """
         if depth >= self.max_depth or X.shape[0] <= self.min_samples_split:
             return Node(best_f, best_thr, X.shape[0], int(np.round(y.mean(), 0)), self._mse(y),
                         left=None, right=None)
@@ -95,7 +184,7 @@ class DecisionTreeRegressor:
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
-        Predict regression target for X.
+        Predict regression target for input samples.
 
         Parameters
         ----------
@@ -113,6 +202,7 @@ class DecisionTreeRegressor:
         return np.array(preds)
 
     def _predict_one_sample(self, features: np.ndarray) -> int:
+
         def rec(node):
             if node.left is None and node.left is None:
                 return node.value
@@ -123,7 +213,6 @@ class DecisionTreeRegressor:
         one_pred = rec(self.tree_)
         return one_pred
 
-
     def as_json(self) -> str:
         return json.dumps(self._as_json(self.tree_), cls=NpEncoder)
 
@@ -131,10 +220,10 @@ class DecisionTreeRegressor:
         if node.left is None and node.right is None:
             return {"value": node.value,
                     "n_samples": node.n_samples,
-                    "mse": np.round(node.mse, 2)} # type: ignore
+                    "mse": np.round(node.mse, 2)}  # type: ignore
         return {"feature": node.feature,
                 "threshold": node.threshold,
                 "n_samples": node.n_samples,
                 "mse": np.round(node.mse, 2),
                 "left": self._as_json(node.left),
-                "right": self._as_json(node.right)} # type: ignore
+                "right": self._as_json(node.right)}  # type: ignore
