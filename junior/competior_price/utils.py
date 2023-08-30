@@ -1,29 +1,83 @@
-"""
-После агрегации мы записываем агрегированную цену конкурента в колонку comp_price.
-
-Осталось определиться, какую брать финальную цену new_price:
-
-    если для товара цен конкурентов не найдено, оставляем старую цену
-    если агрегированная цена конкурента отличается не более чем на ± 20% от старой цены, ставим её, иначе оставляем старую
-
-Описание решения
-
-Напишите функцию agg_comp_price, которая на вход принимает датафрейм, группирует его по полю sku, вариант группировки указан в поле agg (Для одинаковых sku, agg одинаковые).
-
-Решение должно быть отсортировано по sku, а индекс начинаться с 0 и быть последовательным.
-
-import
-
-"""
-
-
 import numpy as np
 import pandas as pd
 
-def agg_comp_price(X: pd.DataFrame) -> pd.DataFrame:
-    import pdb; pdb.set_trace()
-    X["new_price"] = np.nan
-    def agg_style(agg):
-        if agg == "avg":
-            return 
-        return None
+
+def agg_comp_price(X_init: pd.DataFrame) -> pd.DataFrame:
+    """_summary_
+
+    Parameters
+    ----------
+    X_init : pd.DataFrame
+        _description_
+
+    Returns
+    -------
+    pd.DataFrame
+        _description_
+    """
+    def apply_agg(x, y, r):
+        """_summary_
+
+        Parameters
+        ----------
+        x : _type_
+            _description_
+        y : _type_
+            _description_
+        r : _type_
+            _description_
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
+        if x == "max":
+            return np.max(y)
+        elif x == "min":
+            return np.min(y)
+        elif x == "med":
+            return np.median(y)
+        elif x == "avg":
+            return np.mean(y)
+        elif x == "rnk":
+            if r == -1:
+                return np.nan
+            return y[r]
+
+    def comp_price(x, y):
+        """_summary_
+
+        Parameters
+        ----------
+        x : _type_
+            _description_
+        y : _type_
+            _description_
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
+        if y != y:
+            return x
+        if y / x < 1.2 and y / x > 0.8:
+            return y
+        return x
+
+    X = X_init.copy()
+    X = X.groupby(by=["sku"]).agg({
+        "rank": "min",
+        "agg": "first",
+        "base_price": "max",
+        "comp_price": list
+    })
+    X = X.reset_index(drop=False)
+
+    X["comp_price"] = X.apply(lambda x:  apply_agg(
+        x['agg'], x["comp_price"], x["rank"]), axis=1)
+    X["new_price"] = X.apply(lambda x: comp_price(
+        x["base_price"], x["comp_price"]), axis=1)
+    X = X.drop(columns=['rank'])
+    return X
