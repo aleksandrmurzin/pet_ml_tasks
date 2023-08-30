@@ -1,38 +1,47 @@
-WITH a AS (
-    SELECT cast(date_trunc('month', cast(DATE AS DATE)) AS DATE) AS date,
-        id,
-        amount,
-        status_true,
+with a as(
+    select cast(date_trunc('month', cast(DATE AS DATE)) AS DATE) AS date,
+        status,
+        mode
+    from new_payments
+    where mode != 'Не определено'
+),
+b as(
+    select date,
         mode,
-        email_id,
-        phone_id,
-        COUNT(*) OVER(
-            PARTITION BY cast(date_trunc('month', cast(DATE AS DATE)) AS DATE),
-            mode,
-            status_true != 'Confirmed'
-        ) AS success_orders,
-        COUNT(*) OVER(
-            PARTITION BY cast(date_trunc('month', cast(DATE AS DATE)) AS DATE),
-            mode
-        ) AS total_orders
-    FROM (
-            SELECT *,
-                CASE
-                    WHEN status = 'Confirmed' THEN 'Confirmed'
-                    ELSE 'Other'
-                END AS status_true
-            FROM new_payments
-        ) as new_payments
-    WHERE mode != 'Не определено'
+        count(status)::float as total_confirmed
+    from a
+    where status = 'Confirmed'
+    group by date,
+        mode
+    order by date,
+        mode
+),
+c as(
+    select date,
+        mode,
+        count(status)::float as total
+    from a
+    group by date,
+        mode
+    order by date,
+        mode
+),
+d as(
+    select date,
+        c.mode,
+        b.total_confirmed,
+        c.total
+    from b
+        full join c using (date, mode)
 )
-SELECT date,
+select date as time,
     mode,
-    status_true,
-    100 - (success_orders::float / total_orders::float) * 100 as percents
-FROM a
-GROUP BY date,
-    mode,
-    status_true,
-    (success_orders::float / total_orders::float)
-ORDER BY date,
+    (
+        case
+            when total_confirmed is NULL then 0
+            else total_confirmed
+        end
+    ) / total * 100 as percents
+from d
+order by date,
     mode
