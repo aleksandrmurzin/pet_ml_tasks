@@ -23,3 +23,37 @@ from b -- select day,
     --         rows between 6 preceding and current row
     --     ) as wau
     -- from b
+
+
+  with a as(
+select user_id,
+       toStartOfDay(timestamp) as day
+  from default.churn_submits
+ order by timestamp,
+       user_id
+       b as(
+select first_value(user_id) as userid,
+       day,
+       day - interval '7 day' as week_before
+  from a
+ group by user_id, day
+ order by day
+
+
+       )
+
+-- select day,
+--       user_id,
+--       date_sub(week, 1, day) as week_before,
+--       count(distinct user_id) over(partition by day)
+
+--   from a
+
+
+-- select count(user_id) over(partition by day range between day - interval '7 day' and day)
+ select first_value(user_id) as userid,
+        day,
+        day - interval '7 day' as week_before
+  from a
+ group by user_id, day
+ order by day
