@@ -55,32 +55,30 @@ def sample(click_id: int, offer_ids: str) -> dict:
     dict
         _description_
     """
-    e = 0.1
     offers_ids = [int(i) for i in offer_ids.split(",")]
-    r = np.random.random()
 
-    if r < e:
-        idx = np.random.random_integers(0, len(offers_ids) - 1)
-        offer_id = offers_ids[idx]
-        response = {
-            "click_id": click_id,
-            "offer_id": offer_id,
-            "sampler": "random",
-            }
-    else:
-        max_reward = 0
-        offer_id = offers_ids[0]
+    max_prob = 0
+    offer_id = offers_ids[np.random.randint(0, max([len(offers_ids) - 1, 1]))]
 
-        for i in offers_ids:
-            if offer_rewards[i] / max([offer_clicks[i], 1]) > max_reward:
-                max_reward = offer_rewards[i] / max([offer_clicks[i], 1])
-                offer_id = i
+    for i in offers_ids:
+        curr_prop = 0
+        a, b = offer_actions[i], offer_clicks[i]
 
-        response = {
-            "click_id": click_id,
-            "offer_id": offer_id,
-            "sampler": "greedy",
-            }
+        if a <= 0:
+            a = 1
+        if b <= 0:
+            b = 1
+        for _ in range(30):
+
+            curr_prop += np.random.beta(a, b)
+
+        if curr_prop > max_prob:
+            offer_id = i
+
+    response = {
+        "click_id": click_id,
+        "offer_id": offer_id,
+        }
 
     offer_clicks[offer_id] += 1
     pending_clicks[click_id] = offer_id
