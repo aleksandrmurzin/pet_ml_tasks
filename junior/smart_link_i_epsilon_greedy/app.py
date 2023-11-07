@@ -55,35 +55,45 @@ def sample(click_id: int, offer_ids: str) -> dict:
     dict
         _description_
     """
+
     offers_ids = [int(i) for i in offer_ids.split(",")]
 
-    max_prob = 0
-    offer_id = offers_ids[np.random.randint(0, max([len(offers_ids) - 1, 1]))]
+    # e = 0.1
+    # r = np.random.random()
+
+
+
+    # if r < e:
+    #     idx = np.random.random_integers(0, len(offers_ids) - 1)
+    #     offer_id = offers_ids[idx]
+
+    #     response = {
+    #         "click_id": click_id,
+    #         "offer_id": offer_id,
+    #         }
+    # else:
+    max_ucb = 0
+    offer_id = offers_ids[0]
 
     for i in offers_ids:
-        curr_prop = 0
-        a, b = offer_actions[i], offer_clicks[i]
+        ucb = offer_rewards[i] / max([offer_actions[i], 1]) + np.sqrt(2 * np.log10(offer_clicks[i]) / max([offer_actions[i], 1]))
 
-        if a <= 0:
-            a = 1
-        if b <= 0:
-            b = 1
-        for _ in range(30):
-
-            curr_prop += np.random.beta(a, b)
-
-        if curr_prop > max_prob:
+        if ucb > max_ucb:
+            max_ucb = ucb
             offer_id = i
 
     response = {
-        "click_id": click_id,
-        "offer_id": offer_id,
-        }
+    "click_id": click_id,
+    "offer_id": offer_id,
+    }
+
 
     offer_clicks[offer_id] += 1
     pending_clicks[click_id] = offer_id
 
     return response
+
+
 
 
 @app.put("/feedback/")
@@ -152,9 +162,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
